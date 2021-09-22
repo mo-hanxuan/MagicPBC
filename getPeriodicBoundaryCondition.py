@@ -13,7 +13,7 @@ from elementsBody import *
 
 
 # get the inp file and the object
-job = 'tilt45'
+job = 'ellip4_24'
 nodes, elements = readInp('inputData/{}.inp'.format(job))
 obj = ElementsBody(nodes, elements)
 
