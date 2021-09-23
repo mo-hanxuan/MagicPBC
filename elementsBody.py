@@ -53,10 +53,10 @@ def readInp(fileName='donut.inp'):
             
             if cout:
                 data = line.split(',')
+                data = data[:-1]
                 tex = []
                 for x in data:
-                    if x != '\n':
-                        tex.append(x)
+                    tex.append(x)
                 text.extend(tex)
             
             if '*ELEMENT' in line or '*Element' in line or '*element' in line:

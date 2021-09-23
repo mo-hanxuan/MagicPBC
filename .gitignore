@@ -1,0 +1,5 @@
+__pycache__/
+inputData/
+outputData/
+test*.py
+tmp.py
