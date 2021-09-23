@@ -3,6 +3,11 @@
 
     attention: node index start from 1, not 0!
     (注意！ 本程序的节点编号从 1 开始， 与 inp 中的节点编号相同)
+
+    加速方法：
+        self.eleNeighbor 用 字典
+        eleFacet 用 字典
+
 """
 from typing import ValuesView
 import torch as tch
@@ -176,7 +181,7 @@ class ElementsBody(object):
         if not self.nod_ele:
             self.get_nod_ele()
         if not self.eleNeighbor:
-            neighbor = [set() for i in range(len(self.elements))]
+            neighbor = {i: set() for i in range(len(self.elements))}
             for iele, ele in enumerate(self.elements):
                 for node in ele:
                     for eNei in self.nod_ele[int(node)]:
@@ -203,7 +208,9 @@ class ElementsBody(object):
                                  [0, 1, 5, 4]], dtype=tch.int)
             
             allFacets = {'node':[], 'ele':[]}
-            eleFacet = [[[], [], []] for i in range(len(self.elements))]
+            eleFacet = {
+                i: [[], [], []] for i in range(len(self.elements))
+            }
 
             print('now, generate all the element facets')
             for iele, ele in enumerate(self.elements):
@@ -332,6 +339,24 @@ class ElementsBody(object):
             if len(self.allFacets['ele'][facet]) == 1:
                 faceNode |= set(self.allFacets['node'][facet])
         self.faceNode = faceNode
+
+        # facets = tch.tensor([
+        #     [0, 1, 2, 3],  # x
+        #     [4, 5, 6, 7], 
+                                
+        #     [1, 5, 6, 2],  # y
+        #     [0, 4, 7, 3],
+                                
+        #     [3, 2, 6, 7],  # z
+        #     [0, 1, 5, 4]
+        # ], dtype=tch.int)
+        # faceNode = set()
+        # for iele, ele in enumerate(self.elements):
+        #     if iele % 100 == 0:
+        #         percentage = iele / len(self.elements) * 100.
+        #         progressBar_percentage(percentage)
+            
+
         return faceNode
     
 
