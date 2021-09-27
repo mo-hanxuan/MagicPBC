@@ -5,6 +5,8 @@ from elementsBody import *
 import numpy as np
 from collections import OrderedDict
 
+from getPeriodicBoundaryCondition import write_PBC_Nset, write_PBC_equation, adjustCoordinatesForPBC
+
 
 def DeleteObjectAllProperties(objectInstance):
     if not objectInstance:
@@ -37,7 +39,7 @@ def write_nodes_elements(file, obj):
 
 def write_instanceSection(file, obj, dm, instance):
     """
-        have a relationship with function "writePBC"
+        have a relationship with function "writeBoundaryCondition"
     """
     obj.getEdgeVertexForPBC()
     # section for 4 edges
@@ -76,7 +78,7 @@ def write_instanceSection(file, obj, dm, instance):
     file.write('    {}, {}, {}, {}\n'.format(plates[dm][0], plates[dm][1], plates[dm][2], plates[dm][3])) 
 
 
-def writePBC(file, obj, dm):
+def writeBoundaryCondition(file, obj, dm):
     """
         have a relationship with function "write_instanceSection"
     """
@@ -169,12 +171,31 @@ def slice(obj, job):
     
     # obj.nodesNew, obj.elesNew, obj.old2new, obj.eLen = nodesNew, elesNew, old2new, eLen
 
+    writePBC = input('\033[1;33;40m{}\033[0m'.format(
+        'do you want to write the periodic boundary condition (PBC) for this file? (y/n): '
+    ))
+    while writePBC not in ['y', 'n']:
+        writePBC = input('please insert "y" or "n": ')
+    if writePBC == 'y':
+        obj.getFaceForPBC()
+        adjustCoor = input('do you want to adjust the coordinates for PBC? \033[1;33;40m{}\033[0m'.format('(y/n): '))
+        while adjustCoor not in ['y', 'n']:
+            adjustCoor = input('\033[1;33;40m{}\033[0m'.format('please insert "y" or "n": '))
+        if adjustCoor == 'y':
+            adjustCoordinatesForPBC(obj)
+        del obj.faceMatch
+        obj.getFaceForPBC()
 
-    file_ = "outputData/{}_slice.inp".format(job)
+
+    if writePBC == 'n':
+        file_ = "outputData/{}_slice.inp".format(job)
+    elif writePBC == 'y':
+        file_ = "outputData/{}_slice_PBC.inp".format(job)
+    
     functions = {
-        "write_nodes_elements": write_nodes_elements, 
-        "write_instanceSection": write_instanceSection,
-        "writePBC": writePBC,
+        "nodes_elements": write_nodes_elements, 
+        "instanceSection": write_instanceSection,
+        "boundaryCondition": writeBoundaryCondition,
     }
 
     # get instance name
@@ -187,36 +208,44 @@ def slice(obj, job):
                 instance = instance[-1]
                 print('instance =', instance)
                 break
-    with open(file_, 'w') as output, open('inputData/{}.inp'.format(job), 'r') as input: 
+    # write the new .inp file
+    with open(file_, 'w') as newFile, open('inputData/{}.inp'.format(job), 'r') as oldFile: 
         status = "clone"
-        for line in input:
+        for line in oldFile:
+
+            if writePBC == 'y':
+                if "Section:" in line and "**" in line:
+                    write_PBC_Nset(newFile, obj)
+                elif '*End Assembly' in line:
+                    write_PBC_equation(newFile, obj, instance)
+
             if status not in functions:
-                output.write(line)
+                newFile.write(line)  # write the line from old file to new file
                 if '*Instance' in line and 'name' in line and 'part' in line:
-                    status = "write_nodes_elements"
-                    functions[status](output, obj)
+                    status = "nodes_elements"
+                    functions[status](newFile, obj)
                 elif '*End Instance' in line:
-                    status = "write_instanceSection"
-                    functions[status](output, obj, dm, instance)
+                    status = "instanceSection"
+                    functions[status](newFile, obj, dm, instance)
                 elif '**' in line and 'BOUNDARY' in line and 'CONDITIONS' in line:
-                    status = "writePBC"
-                    functions[status](output, obj, dm)
+                    status = "boundaryCondition"
+                    functions[status](newFile, obj, dm)
             
             # change status?
-            if status == "write_nodes_elements" and "Section" in line:
+            if status == "nodes_elements" and "Section" in line:
                 status = "clone"
-                output.write(line)
-            elif status == "write_instanceSection" and "*End Assembly" in line:
+                newFile.write(line)
+            elif status == "instanceSection" and "*End Assembly" in line:
                 status = "clone"
-                output.write(line)
-            elif status == "writePBC" and "OUTPUT REQUESTS" in line:
+                newFile.write(line)
+            elif status == "boundaryCondition" and "OUTPUT REQUESTS" in line:
                 status = "clone"
-                output.write(line)
+                newFile.write(line)
 
 
 if __name__ == '__main__':
 
-    job = 'ellip4_24'
+    job = input('please insert the \033[1;33;40m{}\033[0m name (no prefix): '.format('original .inp file'))
     file_ = 'inputData/{}.inp'.format(job)
 
     nodes, elements = readInp('inputData/{}.inp'.format(job))

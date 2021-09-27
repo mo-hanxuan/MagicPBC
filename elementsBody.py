@@ -52,8 +52,8 @@ def readInp(fileName='donut.inp'):
                     break
             
             if cout:
-                data = line.split(',')
-                data = data[:-1]
+                data = line[:-1].rstrip().rstrip(',')
+                data = data.split(',')
                 tex = []
                 for x in data:
                     tex.append(x)
@@ -159,7 +159,7 @@ class ElementsBody(object):
                 progressBar_percentage(percent)
 
             for j in range(len(ele)):
-                eles = tch.cat((eles, self.nodes[ele[j] - 1, :]))
+                eles = tch.cat((eles, tch.tensor(self.nodes[ele[j]])))
         
         eles = eles.reshape((-1, 8, 3))
         self.eles = eles
@@ -265,7 +265,7 @@ class ElementsBody(object):
         return self.allFacets   
 
 
-    def getVolumes(self):
+    def getVolumes(self, eleNum='all'):
         """
             compute the volume of each element
         """
@@ -281,14 +281,49 @@ class ElementsBody(object):
         ], dtype=tch.int)
 
         volumes = []
-        print('\n now we begin to cpmpute the volume of each element')
-        for iele, ele in enumerate(self.elements):
-            if iele % 100 == 0:
-                progressBar_percentage((iele / len(self.elements)) * 100.)
+
+        if eleNum == 'all':
+            print('\n now we begin to cpmpute the volume of each element')
+            for iele, ele in enumerate(self.elements):
+                if iele % 100 == 0:
+                    progressBar_percentage((iele / len(self.elements)) * 100.)
+                
+                eleCoor = tch.tensor([])
+                for node in ele:
+                    node = node.tolist()
+                    eleCoor = tch.cat((eleCoor, tch.tensor(self.nodes[node])), dim=0)
+                eleCoor = eleCoor.reshape((-1, 3))
+
+                jacobi = tch.tensor([])
+                ksi = tch.tensor([0., 0., 0.], requires_grad=True)
+                coo = tch.tensor([0., 0., 0.])
+
+                for dm in range(3):
+                    tem = 0.125  # shape function
+                    for dm1 in range(len(ncNode[0, :])):
+                        tem1 = ncNode[:, dm1] * ksi[dm1]
+                        tem1 = 1. + tem1
+                        tem *= tem1
+                    coo[dm] = (tem * eleCoor[:, dm]).sum()
+                    tuple_ = tch.autograd.grad(coo[dm], ksi, retain_graph=True)
+                    jacobi = tch.cat((jacobi, list(tuple_)[0]))
+                
+                jacobi = jacobi.reshape((-1, 3))
+                # if iele < 5:
+                #     print('jacobi =\n', jacobi)
+                #     print('tch.det(jacobi) =', tch.det(jacobi))
+                volumes.append((tch.det(jacobi) * 8.).tolist())
             
+            print('\n')  # line break for the progress bar
+            self.volumes = tch.tensor(volumes)
+            return self.volumes
+        else:
+            iele = int(eleNum)
+            ele = self.elements[iele]
             eleCoor = tch.tensor([])
             for node in ele:
-                eleCoor = tch.cat((eleCoor, tch.tensor(self.nodes[int(node)])), dim=0)
+                node = node.tolist()
+                eleCoor = tch.cat((eleCoor, tch.tensor(self.nodes[node])), dim=0)
             eleCoor = eleCoor.reshape((-1, 3))
 
             jacobi = tch.tensor([])
@@ -306,14 +341,7 @@ class ElementsBody(object):
                 jacobi = tch.cat((jacobi, list(tuple_)[0]))
             
             jacobi = jacobi.reshape((-1, 3))
-            # if iele < 5:
-            #     print('jacobi =\n', jacobi)
-            #     print('tch.det(jacobi) =', tch.det(jacobi))
-            volumes.append((tch.det(jacobi) * 8.).tolist())
-        
-        print('\n')  # line break for the progress bar
-        self.volumes = tch.tensor(volumes)
-        return self.volumes
+            return (tch.det(jacobi) * 8.).tolist()
     
     
     def get_eLen(self):
@@ -323,9 +351,10 @@ class ElementsBody(object):
         if not hasattr(self, 'eLen'):
             ### first, get the average element volume
             if not hasattr(self, 'volumes'):
-                self.getVolumes()
-            aveVol = self.volumes.sum() / len(self.volumes)
-            self.eLen = aveVol ** (1./3.)
+                vol = self.getVolumes(eleNum=0)
+            print('\033[1;31;40m{}\033[0m \033[1;33;40m{}\033[0m'.format('volume (ele No.0) =', vol))
+            self.eLen = vol ** (1./3.)
+            print('\033[1;31;40m{}\033[0m \033[1;33;40m{}\033[0m'.format('characteristic element length (No.0) =', self.eLen))
         return self.eLen
     
 
@@ -339,24 +368,6 @@ class ElementsBody(object):
             if len(self.allFacets['ele'][facet]) == 1:
                 faceNode |= set(self.allFacets['node'][facet])
         self.faceNode = faceNode
-
-        # facets = tch.tensor([
-        #     [0, 1, 2, 3],  # x
-        #     [4, 5, 6, 7], 
-                                
-        #     [1, 5, 6, 2],  # y
-        #     [0, 4, 7, 3],
-                                
-        #     [3, 2, 6, 7],  # z
-        #     [0, 1, 5, 4]
-        # ], dtype=tch.int)
-        # faceNode = set()
-        # for iele, ele in enumerate(self.elements):
-        #     if iele % 100 == 0:
-        #         percentage = iele / len(self.elements) * 100.
-        #         progressBar_percentage(percentage)
-            
-
         return faceNode
     
 
