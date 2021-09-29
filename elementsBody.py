@@ -213,6 +213,7 @@ class ElementsBody(object):
             }
 
             print('now, generate all the element facets')
+            timeBeg = time.time()
             for iele, ele in enumerate(self.elements):
 
                 if iele % 100 == 0:
@@ -259,6 +260,9 @@ class ElementsBody(object):
                                 if flag == False:
                                     break
             print('')  # break line for progress bar
+            print('\033[1;35;40m{}\033[0m {}'.format(
+                'consuming time for facets generating is', time.time() - timeBeg
+            ))
             self.allFacets = allFacets
             self.eleFacet = eleFacet
         
