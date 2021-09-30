@@ -192,6 +192,18 @@ class ElementsBody(object):
     
     
     def get_allFacets(self):  # get the element facets
+        """
+            'HashNodes algorithm': (invented by MoHanxuan)
+                a very fast algorithm for facet generating!
+                use hash dict to store all facets
+                nodes number is the key to identify a facet
+                e.g.:
+                    facet with nodes [33, 12, 5, 7] has key '5,7,12,33'
+                    , where 4 nodes are transverted to 
+                    a key of string with sorted sequence and splited by ','
+
+                see variable 'facetDic'
+        """
 
         def lis2str(lis):
             res = ''
