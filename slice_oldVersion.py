@@ -42,7 +42,7 @@ def slice(obj, job):
         old2new[node] = i + 1
     
     print(
-        '\033[1;31;40m'
+        '\033[31m'
         'nodesNew = '
         '\033[0m'
     )

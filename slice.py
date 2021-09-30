@@ -146,7 +146,7 @@ def slice(obj, job):
     
     """
         # print(
-        #     '\033[1;31;40m'
+        #     '\033[31m'
         #     'nodesNew = '
         #     '\033[0m'
         # )
@@ -171,16 +171,16 @@ def slice(obj, job):
     
     # obj.nodesNew, obj.elesNew, obj.old2new, obj.eLen = nodesNew, elesNew, old2new, eLen
 
-    writePBC = input('\033[1;33;40m{}\033[0m'.format(
+    writePBC = input('\033[33m{}\033[0m'.format(
         'do you want to write the periodic boundary condition (PBC) for this file? (y/n): '
     ))
     while writePBC not in ['y', 'n']:
         writePBC = input('please insert "y" or "n": ')
     if writePBC == 'y':
         obj.getFaceForPBC()
-        adjustCoor = input('do you want to adjust the coordinates for PBC? \033[1;33;40m{}\033[0m'.format('(y/n): '))
+        adjustCoor = input('do you want to adjust the coordinates for PBC? \033[33m{}\033[0m'.format('(y/n): '))
         while adjustCoor not in ['y', 'n']:
-            adjustCoor = input('\033[1;33;40m{}\033[0m'.format('please insert "y" or "n": '))
+            adjustCoor = input('\033[33m{}\033[0m'.format('please insert "y" or "n": '))
         if adjustCoor == 'y':
             adjustCoordinatesForPBC(obj)
         del obj.faceMatch
@@ -245,7 +245,7 @@ def slice(obj, job):
 
 if __name__ == '__main__':
 
-    job = input('please insert the \033[1;33;40m{}\033[0m name (no prefix): '.format('original .inp file'))
+    job = input('please insert the \033[33m{}\033[0m name (no prefix): '.format('original .inp file'))
     file_ = 'inputData/{}.inp'.format(job)
 
     nodes, elements = readInp('inputData/{}.inp'.format(job))

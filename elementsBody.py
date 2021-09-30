@@ -192,6 +192,17 @@ class ElementsBody(object):
     
     
     def get_allFacets(self):  # get the element facets
+
+        def lis2str(lis):
+            res = ''
+            for i in lis:
+                res += (str(i) + ',')
+            return res[:-1]
+        
+        def str2lis(s):
+            return list(map(int, s.split(',')))
+
+
         if not self.eleNeighbor:
             self.get_eleNeighbor()
 
@@ -214,6 +225,7 @@ class ElementsBody(object):
 
             print('now, generate all the element facets')
             timeBeg = time.time()
+            facetDic = {}
             for iele, ele in enumerate(self.elements):
 
                 if iele % 100 == 0:
@@ -224,44 +236,27 @@ class ElementsBody(object):
                     f = []
                     for node in facet:
                         f.append(int(ele[node]))
-                    # see if the face the same with the previous face
-                    flag = True
-                    for eNei in self.eleNeighbor[iele]:
-                        if eNei < iele:
-                            for facet2 in facets:
-                                f2 = []
-                                for node in facet2:
-                                    nod = self.elements[eNei, node]
-                                    f2.append(int(nod))
-                                if set(f2) == set(f):
-                                    flag = False
-                                    break
-                            if flag == False:
-                                break
-                    if flag:
-                        allFacets['node'].append(f)
-                        allFacets['ele'].append([iele, ])
-                        eleFacet[iele][int(ifacet / 2)].append(len(allFacets['node']) - 1)
-
-                        # find another element that shares this same face
-                        flag = True
-                        for eNei in self.eleNeighbor[iele]:
-                            if eNei > iele:
-                                for jfacet, facet in enumerate(facets):
-                                    f2 = []
-                                    for node in facet:
-                                        nod = self.elements[eNei, node]
-                                        f2.append(int(nod))
-                                    if set(f2) == set(f):
-                                        allFacets['ele'][-1].append(eNei)
-                                        eleFacet[eNei][int(jfacet / 2)].append(len(allFacets['node']) - 1)
-                                        flag = False
-                                        break
-                                if flag == False:
-                                    break
+                    tmp = lis2str(sorted(f))
+                    if tmp in facetDic:
+                        facetDic[tmp].append(iele)
+                    else:
+                        facetDic[tmp] = [iele]
+                    eleFacet[iele][ifacet // 2].append(tmp)
+            
             print('')  # break line for progress bar
-            print('\033[1;35;40m{}\033[0m {}'.format(
-                'consuming time for facets generating is', time.time() - timeBeg
+            print('\033[33m{}\033[0m {} \033[35m{}\033[0m'.format(
+                'time for facetDic is', time.time() - timeBeg, "seconds"
+            ))
+            for key in facetDic:
+                allFacets['node'].append(str2lis(key))
+                allFacets['ele'].append(facetDic[key])
+
+            print('\033[33m{}\033[0m {} \033[35m{}\033[0m'.format(
+                'consuming time for facets generating is', time.time() - timeBeg, "seconds"
+            ))
+
+            print('\033[35m{}\033[0m {} \033[35m{}\033[0m'.format(
+                'There are', len(facetDic), 'facets'
             ))
             self.allFacets = allFacets
             self.eleFacet = eleFacet
@@ -356,9 +351,9 @@ class ElementsBody(object):
             ### first, get the average element volume
             if not hasattr(self, 'volumes'):
                 vol = self.getVolumes(eleNum=0)
-            print('\033[1;31;40m{}\033[0m \033[1;33;40m{}\033[0m'.format('volume (ele No.0) =', vol))
+            print('\033[31m{}\033[0m \033[33m{}\033[0m'.format('volume (ele No.0) =', vol))
             self.eLen = vol ** (1./3.)
-            print('\033[1;31;40m{}\033[0m \033[1;33;40m{}\033[0m'.format('characteristic element length (No.0) =', self.eLen))
+            print('\033[31m{}\033[0m \033[33m{}\033[0m'.format('characteristic element length (No.0) =', self.eLen))
         return self.eLen
     
 
@@ -526,13 +521,13 @@ class ElementsBody(object):
             inside = line - {beg} - {end}
             zlines[i_line] = {'beg': beg, 'end': end, 'inside': sorted(inside, key=lambda a: self.nodes[a][2])}
         
-        print('\033[1;36;40m' 'xlines =' '\033[0m')
+        print('\033[36m' 'xlines =' '\033[0m')
         for edge in xlines:
             print(edge)
-        print('\033[1;36;40m' 'ylines =' '\033[0m')
+        print('\033[36m' 'ylines =' '\033[0m')
         for edge in ylines:
             print(edge)
-        print('\033[1;36;40m' 'zlines =' '\033[0m')
+        print('\033[36m' 'zlines =' '\033[0m')
         for edge in zlines:
             print(edge)
         
@@ -615,14 +610,14 @@ class ElementsBody(object):
             baseNodes.append([n0, n1])
             
             faceMatch[-1][n0] = n1
-            print('\033[1;31;40m' 'n0 = {}, n1 = {}' '\033[0m'.format(n0, n1))
+            print('\033[31m' 'n0 = {}, n1 = {}' '\033[0m'.format(n0, n1))
             
             ## start from n0, n1; and traverse other nodes by BFS
             visited0 = {i: False for i in f0}
             print('len(f0) = {}, len(f1) = {}'.format(len(f0), len(f1)))
             if len(f0) != len(f1):
                 raise ValueError(
-                    '\033[1;31;40m' 
+                    '\033[31m' 
                     'nodes quantity does not coincide for opposite faces, f0 ({}) nodes != f1 ({}) nodes' 
                     '\033[0m'.format(len(f0), len(f1))
                 )
@@ -634,7 +629,7 @@ class ElementsBody(object):
                     node1 = lis1[i_node0]
 
                     if len(self.graph[node0]) != len(self.graph[node1]):
-                        print('\033[1;31;40m''len(self.graph[node0]) = {} \nlen(self.graph[node1]) = {}''\033[0m'.format(
+                        print('\033[31m''len(self.graph[node0]) = {} \nlen(self.graph[node1]) = {}''\033[0m'.format(
                             len(self.graph[node0]), len(self.graph[node1])
                         ))
 
@@ -661,23 +656,23 @@ class ElementsBody(object):
                             faceMatch[-1][nex0] = partner
                         else:
                             print(
-                                '\033[1;31;40m'
+                                '\033[31m'
                                 'node0 = {}, nex0 = {}, node1 = {}, nex1 = {}, \n''vec0 = {}, vec1 = {}'
                                 '\033[0m'.format(
                                     node0, nex0, node1, nex1, vec0s[nex0], vec1s[partner],
                                 )
                             )
                             print(
-                                '\033[1;33;40m''warning! relativeError ({:5f}) > tolerance ({}) '
+                                '\033[33m''warning! relativeError ({:5f}) > tolerance ({}) '
                                 'between vector({} --> {}) and vector({} --> {})'
                                 '\033[0m'.format(
                                 relativeError, tolerance, node0, nex0, node1, nex1
                             ))
-                            omit = input('\033[1;36;40m' 'do you want to continue? (y/n): ' '\033[0m')
+                            omit = input('\033[36m' 'do you want to continue? (y/n): ' '\033[0m')
                             if omit == 'y' or omit == '':
-                                remainTol = input('\033[1;36;40m''remain the current tolerance? (y/n): ' '\033[0m')
+                                remainTol = input('\033[36m''remain the current tolerance? (y/n): ' '\033[0m')
                                 if remainTol == 'n':
-                                    tolerance = float(input('\033[1;36;40m''reset tolerance = ' '\033[0m'))
+                                    tolerance = float(input('\033[36m''reset tolerance = ' '\033[0m'))
                                 faceMatch[-1][nex0] = partner
                             else:
                                 raise ValueError('relativeError > tolerance, try to enlarge tolerence instead')
@@ -692,12 +687,12 @@ class ElementsBody(object):
 if __name__ == '__main__':
 
     # fileName = 'donut.inp'
-    fileName = 'tilt45.inp'
+    fileName = 'inputData/tilt45.inp'
 
     nodes, elements = readInp(fileName=fileName)
     
     print('elemens.size() =', elements.size())
-    print('nodes.size() =', nodes.size())
+    print('len(nodes) =', len(nodes))
 
     print('elements[599, :] =\n', elements[599, :])
 

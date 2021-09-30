@@ -157,9 +157,9 @@ if __name__ == "__main__":
     #     print(pair)
     #     print('')
 
-    adjustCoor = input('do you want to adjust the coordinates for PBC? \033[1;33;40m{}\033[0m'.format('(y/n): '))
+    adjustCoor = input('do you want to adjust the coordinates for PBC? \033[33m{}\033[0m'.format('(y/n): '))
     while adjustCoor not in ['y', 'n']:
-        adjustCoor = input('\033[1;33;40m{}\033[0m'.format('please insert "y" or "n": '))
+        adjustCoor = input('\033[33m{}\033[0m'.format('please insert "y" or "n": '))
     if adjustCoor == 'y':
         adjustCoordinatesForPBC(obj)
     del obj.faceMatch
@@ -178,10 +178,10 @@ if __name__ == "__main__":
                 break
     
     writeInp = input(
-        'ok to write the .inp file with PBC inside the file ? \033[1;36;40m{}\033[0m'.format('(y/n): ')
+        'ok to write the .inp file with PBC inside the file ? \033[36m{}\033[0m'.format('(y/n): ')
     )
     while writeInp not in ['y', 'n']:
-        writeInp = input('\033[1;31;40m{}\033[0m'.format(
+        writeInp = input('\033[31m{}\033[0m'.format(
             'please insert "y" or "n": '
         ))
     if writeInp == 'y':
