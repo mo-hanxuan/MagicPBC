@@ -3,3 +3,4 @@ inputData/*
 outputData/*
 test*.py
 tmp.py
+*oldVersion.py
