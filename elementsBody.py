@@ -4,6 +4,14 @@
     attention: node index start from 1, not 0!
     (注意！ 本程序的节点编号从 1 开始， 与 inp 中的节点编号相同)
 
+    hashNodes algorithm:
+        very fast to identify all facets,
+        facets stored by a dict(), 
+        (see 'facetDic')
+        key of dict:
+            sorted tuple of node numbers of a facet
+
+
     加速方法：
         self.eleNeighbor 用 字典
         eleFacet 用 字典
@@ -200,20 +208,10 @@ class ElementsBody(object):
                 e.g.:
                     facet with nodes [33, 12, 5, 7] has key '5,7,12,33'
                     , where 4 nodes are transverted to 
-                    a key of string with sorted sequence and splited by ','
+                    a key of tuple with sorted sequence
 
                 see variable 'facetDic'
         """
-
-        def lis2str(lis):
-            res = ''
-            for i in lis:
-                res += (str(i) + ',')
-            return res[:-1]
-        
-        def str2lis(s):
-            return list(map(int, s.split(',')))
-
 
         if not self.eleNeighbor:
             self.get_eleNeighbor()
@@ -248,7 +246,7 @@ class ElementsBody(object):
                     f = []
                     for node in facet:
                         f.append(int(ele[node]))
-                    tmp = lis2str(sorted(f))
+                    tmp = tuple(sorted(f))
                     if tmp in facetDic:
                         facetDic[tmp].append(iele)
                     else:
@@ -260,7 +258,7 @@ class ElementsBody(object):
                 'time for facetDic is', time.time() - timeBeg, "seconds"
             ))
             for key in facetDic:
-                allFacets['node'].append(str2lis(key))
+                allFacets['node'].append(key)
                 allFacets['ele'].append(facetDic[key])
 
             print('\033[33m{}\033[0m {} \033[35m{}\033[0m'.format(
