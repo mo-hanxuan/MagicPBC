@@ -5,7 +5,7 @@ make periodic boundary condition (PBC) for the grid of finite element analysis
 ## hightlights
 + newly invented algorithm for nodes matching between face-pair, 
     dramatically acclerates the nodes matching process
-    (namely, BFS-match algorithm, time complexity reduses from n^2 to n)
+    (namely, BFS-match algorithm, time complexity reduses from O(n^2) to O(n))
 + more robust algorithm to identify the outer face of a grid
     (not sensity to the rotation and deformation of the grid)
 + mutch more robust, not sensitive to relative error between pair faces.
