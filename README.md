@@ -14,12 +14,6 @@ make periodic boundary condition (PBC) for the grid of finite element analysis
     unlike traditional method which dones not consider the connection (as a graph) of nodes on a face)
 + automaticall adjust nodes position between two corresponding faces, 
     so that each pair of faces can match excactly at initially state
-+ hashNodes algorithm: <br>
-    very fast to identify all facets,
-    facets stored by a dict(), 
-    (see 'facetDic')
-    key of dict:
-        sorted tuple of node numbers of a facet
 
 ## usage
 + give the .inp file into the 'inputData' folder
