@@ -147,7 +147,7 @@ def adjustCoordinatesForPBC(obj):
 
 if __name__ == "__main__":
     # get the inp file and the object
-    job = 'ellip4_24_slice'
+    job = input("\033[0;33;40m{}\033[0m".format("please insert the .inp file name: "))
     nodes, elements = readInp('inputData/{}.inp'.format(job))
     obj = ElementsBody(nodes, elements)
 
