@@ -198,7 +198,7 @@ if __name__ == "__main__":
                 if clone:
                     newFile.write(line)  # write the line from old file to new file
 
-                if "*Node" in line or "*NODE" in line or "*node" in line:
+                if line == "*Node":
                     if hasattr(obj, 'nodesAdjusted'):
                         clone = False
                         write_nodes(newFile, obj) 

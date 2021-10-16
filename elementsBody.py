@@ -628,7 +628,7 @@ class ElementsBody(object):
             if len(f0) != len(f1):
                 raise ValueError(
                     '\033[31m' 
-                    'nodes quantity does not coincide for opposite faces, f0 ({}) nodes != f1 ({}) nodes' 
+                    ' nodes quantity does not coincide for opposite faces, f0 ({}) nodes != f1 ({}) nodes ' 
                     '\033[0m'.format(len(f0), len(f1))
                 )
             lis0, lis1 = [n0], [n1]
