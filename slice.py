@@ -109,7 +109,12 @@ def writeBoundaryCondition(file, obj, dm):
     file.write('corner_plate, {}, {}\n'.format(dm + 1, dm + 1))
 
 
-def slice(obj, job):
+def slice(obj, inpFile):
+
+    if not isinstance(inpFile, str):
+        raise ValueError('inp file name should be of type string with its path. ')
+    job = inpFile.split("/")[-1][:-4] if "/" in inpFile else inpFile.split("\\")[-1][:-4]
+
     if not isinstance(obj, ElementsBody):
         raise ValueError('input argument should be of class Elementsbody for function "slice"')
     eLen = obj.get_eLen()
@@ -200,7 +205,7 @@ def slice(obj, job):
 
     # get instance name
     instance = 'Part-1'
-    with open('inputData/{}.inp'.format(job), 'r') as file:
+    with open(inpFile, 'r') as file:
         for line in file:
             if '*Instance' in line and 'name=' in line:
                 instance = line.split(',')
@@ -209,7 +214,7 @@ def slice(obj, job):
                 print('instance =', instance)
                 break
     # write the new .inp file
-    with open(file_, 'w') as newFile, open('inputData/{}.inp'.format(job), 'r') as oldFile: 
+    with open(file_, 'w') as newFile, open(inpFile, 'r') as oldFile: 
         status = "clone"
         for line in oldFile:
 
@@ -241,18 +246,18 @@ def slice(obj, job):
             elif status == "boundaryCondition" and "OUTPUT REQUESTS" in line:
                 status = "clone"
                 newFile.write(line)
+    print("\033[40;36;1m {} {} \033[40;33;1m {} \033[0m".format(
+        "file", "./" + file_, "has been written. "
+    ))
 
 
 if __name__ == '__main__':
 
-    job = input('please insert the \033[33m{}\033[0m name (no prefix): '.format('original .inp file'))
-    file_ = 'inputData/{}.inp'.format(job)
+    inpFile = input('please insert the \033[33m{}\033[0m name (include the path): '.format('original .inp file'))
 
-    nodes, elements = readInp('inputData/{}.inp'.format(job))
-    obj = ElementsBody(nodes, elements)
-    nodes, elements = [], []
+    obj = ElementsBody(*readInp(inpFile))
 
     print('len(obj.nodes) = {}, len(obj.elements) = {}'.format(len(obj.nodes), len(obj.elements)))
-    slice(obj, job)
+    slice(obj, inpFile)
     print('len(obj.nodes) = {}, len(obj.elements) = {}'.format(len(obj.nodes), len(obj.elements)))
 

@@ -10,12 +10,6 @@
         (see 'facetDic')
         key of dict:
             sorted tuple of node numbers of a facet
-
-
-    加速方法：
-        self.eleNeighbor 用 字典
-        eleFacet 用 字典
-
 """
 from typing import ValuesView
 import torch as tch
@@ -429,19 +423,20 @@ class ElementsBody(object):
             xMin, xMax, yMin, yMax, zMin, zMax
         ))
 
+        eps = 1.e-3
         eLen = self.eLen
         for node in self.faceNode:
-            if abs(self.nodes[node][0] - xMin) < eLen * 1.e-4:
+            if abs(self.nodes[node][0] - xMin) < eLen * eps:
                 x0Face.add(node)
-            if abs(self.nodes[node][0] - xMax) < eLen * 1.e-4:
+            if abs(self.nodes[node][0] - xMax) < eLen * eps:
                 x1Face.add(node)
-            if abs(self.nodes[node][1] - yMin) < eLen * 1.e-4:
+            if abs(self.nodes[node][1] - yMin) < eLen * eps:
                 y0Face.add(node)
-            if abs(self.nodes[node][1] - yMax) < eLen * 1.e-4:
+            if abs(self.nodes[node][1] - yMax) < eLen * eps:
                 y1Face.add(node)
-            if abs(self.nodes[node][2] - zMin) < eLen * 1.e-4:
+            if abs(self.nodes[node][2] - zMin) < eLen * eps:
                 z0Face.add(node)
-            if abs(self.nodes[node][2] - zMax) < eLen * 1.e-4:
+            if abs(self.nodes[node][2] - zMax) < eLen * eps:
                 z1Face.add(node)
         self.x0Face, self.x1Face, \
         self.y0Face, self.y1Face, \
@@ -697,7 +692,7 @@ class ElementsBody(object):
 if __name__ == '__main__':
 
     # fileName = 'donut.inp'
-    fileName = 'inputData/tilt45.inp'
+    fileName = input("\033[35;1m please input the file name (include path), fileName = \033[0m")
 
     nodes, elements = readInp(fileName=fileName)
     

@@ -1,15 +1,15 @@
 """
-    生成周期性边界条件，只用 BFS算法，比如，左右两面成周期性边界条件的话
-    左面BFS, 右面根据左面 BFS 的矢量方向来遍历节点，左右两边同时经过的节点即可作为一对 pair
+    生成周期性边界条件, 只用 BFS算法, 比如, 左右两面成周期性边界条件的话
+    左面BFS, 右面根据左面 BFS 的矢量方向来遍历节点, 左右两边同时经过的节点即可作为一对 pair
 
-    好处：时间复杂度是 n, n 是左面节点的数量
+    好处: 时间复杂度是 n, n 是左面节点的数量
     否则:
-        普通算法1及缺点：根据所有距离矩阵来计算，时间复杂度会是 n**2
-        普通算法2及缺点：面节点先排序再对应 （根据坐标排序），时间复杂度是 nlogn, 且排序会受到浮点数舍入误差的影响
+        普通算法1及缺点: 根据所有距离矩阵来计算, 时间复杂度会是 n**2
+        普通算法2及缺点: 面节点先排序再对应 （根据坐标排序）, 时间复杂度是 nlogn, 且排序会受到浮点数舍入误差的影响
 
 
     重要功能！！！ (已实现)
-        对于PBC, 在左右两面的节点拼接带有误差的时候，
+        对于PBC, 在左右两面的节点拼接带有误差的时候, 
         带有节点坐标调整功能, 使得左右两面的节点几乎可以完全匹配
         见函数 "adjustCoordinatesForPBC()"
 """
@@ -147,9 +147,9 @@ def adjustCoordinatesForPBC(obj):
 
 if __name__ == "__main__":
     # get the inp file and the object
-    job = input("\033[0;33;40m{}\033[0m".format("please insert the .inp file name: "))
-    nodes, elements = readInp('inputData/{}.inp'.format(job))
-    obj = ElementsBody(nodes, elements)
+    inpFile = input("\033[0;33;40m{}\033[0m".format("please insert the .inp file name (include the path): "))
+    job = inpFile.split("/")[-1][:-4] if "/" in inpFile else inpFile.split("\\")[-1][:-4]
+    obj = ElementsBody(*readInp(inpFile))
 
     obj.getFaceForPBC()
     # print('obj.faceMatch =')
@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     # find the instance name
     instance = 'Part-1'
-    with open('inputData/{}.inp'.format(job), 'r') as file:
+    with open(inpFile, 'r') as file:
         for line in file:
             if '*Instance' in line and 'name=' in line:
                 instance = line.split(',')
@@ -185,7 +185,7 @@ if __name__ == "__main__":
             'please insert "y" or "n": '
         ))
     if writeInp == 'y':
-        with open('outputData/{}_PBC.inp'.format(job), 'w') as newFile, open('inputData/{}.inp'.format(job), 'r') as oldFile:
+        with open('outputData/{}_PBC.inp'.format(job), 'w') as newFile, open(inpFile, 'r') as oldFile:
             clone = True
             for line in oldFile:
                 if "Section:" in line and "**" in line:
@@ -202,14 +202,23 @@ if __name__ == "__main__":
                     if hasattr(obj, 'nodesAdjusted'):
                         clone = False
                         write_nodes(newFile, obj) 
+        print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
+            "file", './outputData/{}_PBC.inp'.format(job), "has been written. "
+        ))
     else:
         # write the Nset
         with open('outputData/Nset_{}.txt'.format(job), 'w') as file:
             for node in obj.faceNode:
                 file.write('*Nset, nset=N{} \n'.format(node))
                 file.write('{}, \n'.format(node))
+        print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
+            "file", 'outputData/Nset_{}.txt'.format(job), "has been written. "
+        ))
         # write the equation for PBC
         with open('outputData/Equation_{}.txt'.format(job), 'w') as file:
             write_PBC_equation(file, obj, instance)
+        print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
+            "file", 'outputData/Equation_{}.txt'.format(job), "has been written. "
+        ))
         
     
