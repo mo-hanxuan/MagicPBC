@@ -26,6 +26,8 @@ def write_PBC_equation(file, obj, instance):
             2. make 12 edges to satisfy PBC
             3. make the inside nodes of face-pair to coincide
     """
+    if not isinstance(obj, ElementsBody):
+        raise ValueError("error, not isinstance(obj, ElementsBody)")
     if not hasattr(obj, 'v_x0y0z0'):
         obj.getEdgeVertexForPBC()
     
@@ -78,7 +80,87 @@ def write_PBC_equation(file, obj, instance):
                     file.write('{}.N{}, {},  1 \n'.format(instance, obj.baseNodes[iface][1], dm))
 
 
+def write_PBC_equation_byGraph(file, obj, instance):
+    """
+        use graph-method to get the PBC info, 
+        write the PBC for the 8 outer vertex, and 12 edges, and 6 faces, with three steps:
+            1. make the 8 outer vertexes to form a parallel hexahedron (平行六面体))
+            2. make 12 edges to satisfy PBC
+            3. make the inside nodes of face-pair to coincide
+
+            the node-number of megaElement 
+            (composed of vertex of outer surface) is shown as follows,  
+                      v3------v7
+                     /|      /|
+                    v0------v4|
+                    | |     | |
+                    | v2----|-v6
+             y ^    |/      |/
+               |    v1------v5
+               --->
+              /    x
+             z       
+    """
+    if not isinstance(obj, ElementsBody):
+        raise ValueError("error, not isinstance(obj, ElementsBody)")
+    obj.getFaceForPBC_byGraph()
+    obj.getEdgeForPBC_byGraph()
+    
+    ##  1.1 make the y0face to be parallogram
+    file.write('************************** make the y0face to be parallogram \n')
+    for dm in [1, 2, 3]:
+        file.write('*Equation\n4 \n')
+        file.write('{}.N{}, {},  1 \n'.format(instance, obj.megaElement[6], dm))
+        file.write('{}.N{}, {}, -1 \n'.format(instance, obj.megaElement[2], dm))
+        file.write('{}.N{}, {}, -1 \n'.format(instance, obj.megaElement[5], dm))
+        file.write('{}.N{}, {},  1 \n'.format(instance, obj.megaElement[1], dm))
+
+    ##   1.2 make vertexes of ylines to form parallel hexahedron
+    file.write('************************** make vertexes of 4 ylines to coincide \n')
+    for i, j in [[7, 6], [3, 2], [0, 1]]:
+        for dm in [1, 2, 3]:
+            file.write('*Equation\n4 \n')
+            file.write('{}.N{}, {},  1 \n'.format(instance, obj.megaElement[i], dm))
+            file.write('{}.N{}, {}, -1 \n'.format(instance, obj.megaElement[j], dm))
+            file.write('{}.N{}, {}, -1 \n'.format(instance, obj.megaElement[4], dm))
+            file.write('{}.N{}, {},  1 \n'.format(instance, obj.megaElement[5], dm))
+    
+    #  2. make all outer edges to coincide
+    file.write('************************** make all outer edges to coincide \n')
+    edgeId = [
+        [[0, 4], [3, 7], [2, 6], [1, 5]],  # xEdges
+        [[1, 0], [5, 4], [6, 7], [2, 3]],  # yEdges
+        [[2, 1], [6, 5], [7, 4], [3, 0]]   # zEdges
+    ]
+    for edges in edgeId:  # edges = xEdges or yEdges or zEdges
+        edge0 = (obj.megaElement[edges[0][0]], obj.megaElement[edges[0][1]])
+        if edge0 in obj.outlines:
+            for edge in edges[1:]:
+                edge1 = (obj.megaElement[edge[0]], obj.megaElement[edge[1]])
+                for node in range(len(obj.outlines[edge0])):
+                    for dm in [1, 2, 3]:
+                        file.write('*Equation\n4 \n')
+                        file.write('{}.N{}, {},  1 \n'.format(instance, obj.outlines[edge1][node], dm))
+                        file.write('{}.N{}, {}, -1 \n'.format(instance, edge1[0], dm))
+                        file.write('{}.N{}, {}, -1 \n'.format(instance, obj.outlines[edge0][node], dm))
+                        file.write('{}.N{}, {},  1 \n'.format(instance, edge0[0], dm))
+
+    #  3. make all corresponding face-pairs to coincide
+    file.write('************************** make all corresponding face-pairs to coincide \n')
+    for twoFacets in obj.faceMatch:
+        faceMatch = obj.faceMatch[twoFacets]
+        for node in faceMatch:
+            for dm in [1, 2, 3]:
+                file.write('*Equation\n4 \n')
+                file.write('{}.N{}, {},  1 \n'.format(instance, node, dm))
+                file.write('{}.N{}, {}, -1 \n'.format(instance, twoFacets[0], dm))
+                file.write('{}.N{}, {}, -1 \n'.format(instance, faceMatch[node], dm))
+                file.write('{}.N{}, {},  1 \n'.format(instance, twoFacets[4], dm))
+
+
 def write_PBC_Nset(file, obj):
+    if not isinstance(obj, ElementsBody):
+        raise ValueError("error, not isinstance(obj, ElementsBody)")
     if not hasattr(obj, 'faceNode'):
         obj.getFaceNode()
     for node in obj.faceNode:
@@ -94,11 +176,70 @@ def write_nodes(file, obj):
         ))
 
 
+def adjustCoordinatesForPBC_byGraph(obj):
+    """
+        use graph method to get the node-relation, 
+        adjust the nodal coordiantes for periodic boundary condition (PBC)
+        make the nodes at face-pair to be strictly coincide at initial state
+    """
+    if not isinstance(obj, ElementsBody):
+        raise ValueError("error, not isinstance(obj, ElementsBody)")
+    obj.getFaceForPBC_byGraph()
+    obj.getEdgeForPBC_byGraph()
+    
+    makenp = False
+    for node in obj.nodes:
+        if type(obj.nodes[node]) == type([]):
+            makenp = True
+        break
+    if makenp:
+        for node in obj.nodes:
+            obj.nodes[node] = np.array(obj.nodes[node])
+
+    ##  1.1 make the y0face to be parallogram
+    obj.nodes[obj.megaElement[6]] = \
+        obj.nodes[obj.megaElement[2]] + \
+        (obj.nodes[obj.megaElement[5]] - obj.nodes[obj.megaElement[1]])
+
+    ##   1.2 make vertexes of ylines to form parallel hexahedron
+    for i, j in [[7, 6], [3, 2], [0, 1]]:
+        obj.nodes[obj.megaElement[i]] = \
+            obj.nodes[obj.megaElement[j]] + \
+                obj.nodes[obj.megaElement[4]] - obj.nodes[obj.megaElement[5]]
+    
+    #  2. make all outer edges to coincide
+    edgeId = [
+        [[0, 4], [3, 7], [2, 6], [1, 5]],  # xEdges
+        [[1, 0], [5, 4], [6, 7], [2, 3]],  # yEdges
+        [[2, 1], [6, 5], [7, 4], [3, 0]]   # zEdges
+    ]
+    for edges in edgeId:  # edges = xEdges or yEdges or zEdges
+        edge0 = (obj.megaElement[edges[0][0]], obj.megaElement[edges[0][1]])
+        if edge0 in obj.outlines:
+            for edge in edges[1:]:
+                edge1 = (obj.megaElement[edge[0]], obj.megaElement[edge[1]])
+                for node in range(len(obj.outlines[edge0])):
+                    obj.nodes[obj.outlines[edge1][node]] = \
+                        obj.nodes[edge1[0]] + \
+                            obj.nodes[obj.outlines[edge0][node]] - obj.nodes[edge0[0]]
+
+    #  3. make all corresponding face-pairs to coincide
+    for twoFacets in obj.faceMatch:
+        faceMatch = obj.faceMatch[twoFacets]
+        for node in faceMatch:
+            obj.nodes[faceMatch[node]] = \
+                obj.nodes[twoFacets[4]] + \
+                    obj.nodes[node] - obj.nodes[twoFacets[0]]
+    obj.nodesAdjusted = True
+
+
 def adjustCoordinatesForPBC(obj):
     """
         adjust the nodal coordiantes for periodic boundary condition (PBC)
         make the nodes at face-pair to be strictly coincide at initial state
     """
+    if not isinstance(obj, ElementsBody):
+        raise ValueError("error, not isinstance(obj, ElementsBody)")
     if not hasattr(obj, 'v_x0y0z0'):
         obj.getEdgeVertexForPBC()
     
@@ -148,22 +289,32 @@ def adjustCoordinatesForPBC(obj):
 if __name__ == "__main__":
     # get the inp file and the object
     inpFile = input("\033[0;33;40m{}\033[0m".format("please insert the .inp file name (include the path): "))
-    job = inpFile.split("/")[-1][:-4] if "/" in inpFile else inpFile.split("\\")[-1][:-4]
+    job = inpFile.split("/")[-1].split(".inp")[0] if "/" in inpFile else inpFile.split("\\")[-1].split(".inp")[0]
+    path = inpFile.split(job + ".inp")[0]
     obj = ElementsBody(*readInp(inpFile))
 
-    obj.getFaceForPBC()
-    # print('obj.faceMatch =')
-    # for pair in obj.faceMatch:
-    #     print(pair)
-    #     print('')
+    key = input("\033[35;1m{}\033[0m".format(
+        "which method do you want to use? "
+        "1: xMin, xMax, yMin, yMax, zMin, zMax;  "
+        "2: graph-method, (insert 1 or 2): \n"
+    ))
+    if key == "1":
+        getFaceForPBC = obj.getFaceForPBC
+        writeEquations = write_PBC_equation
+        adjustCoordinate = adjustCoordinatesForPBC
+    elif key == "2":
+        getFaceForPBC = obj.getFaceForPBC_byGraph
+        writeEquations = write_PBC_equation_byGraph
+        adjustCoordinate = adjustCoordinatesForPBC_byGraph
+    getFaceForPBC()
 
     adjustCoor = input('do you want to adjust the coordinates for PBC? \033[33m{}\033[0m'.format('(y/n): '))
     while adjustCoor not in ['y', 'n']:
         adjustCoor = input('\033[33m{}\033[0m'.format('please insert "y" or "n": '))
     if adjustCoor == 'y':
-        adjustCoordinatesForPBC(obj)
+        adjustCoordinate(obj)
     del obj.faceMatch
-    obj.getFaceForPBC()
+    getFaceForPBC()
     
 
     # find the instance name
@@ -185,25 +336,27 @@ if __name__ == "__main__":
             'please insert "y" or "n": '
         ))
     if writeInp == 'y':
-        with open('outputData/{}_PBC.inp'.format(job), 'w') as newFile, open(inpFile, 'r') as oldFile:
+        newFileName = path + job + "_PBC.inp"
+        with open(newFileName, 'w') as newFile, open(inpFile, 'r') as oldFile:
             clone = True
             for line in oldFile:
                 if "Section:" in line and "**" in line:
                     write_PBC_Nset(newFile, obj)
                 elif '*End Assembly' in line:
-                    write_PBC_equation(newFile, obj, instance)
+                    writeEquations(newFile, obj, instance)
                     
                 if clone == False and '*' in line:
                     clone = True
                 if clone:
                     newFile.write(line)  # write the line from old file to new file
 
-                if line == "*Node":
+                if "*Node\n" in line:
                     if hasattr(obj, 'nodesAdjusted'):
                         clone = False
+                        print("\033[35;1m{}\033[0m".format("write new nodes for obj"))
                         write_nodes(newFile, obj) 
         print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
-            "file", './outputData/{}_PBC.inp'.format(job), "has been written. "
+            "file", newFileName, "has been written. "
         ))
     else:
         # write the Nset
@@ -216,7 +369,7 @@ if __name__ == "__main__":
         ))
         # write the equation for PBC
         with open('outputData/Equation_{}.txt'.format(job), 'w') as file:
-            write_PBC_equation(file, obj, instance)
+            writeEquations(file, obj, instance)
         print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
             "file", 'outputData/Equation_{}.txt'.format(job), "has been written. "
         ))
