@@ -39,9 +39,9 @@
 
 ​	The traditional method matches nodes on opposite sides (of surface) by nearest-coordinates, which is very slow with time-complexity of ![](http://latex.codecogs.com/gif.latex?O(V^{2})), where V is total number of vertexes (nodes). This is  because for each node one side, it has to search all nodes on the other side to find out the matching node. 
 
-​	Here, we present a new method by breadth-first-search (BFS) to match the irregular nodes on opposite sides, with time-complexity of ![](http://latex.codecogs.com/gif.latex?O(V + E) ≈ O(V)), where V and E are the total numbers of nodes and edges on one side of the surface (For a graph simply composed of triangles or quads, E and N is almost the same, thus ![](http://latex.codecogs.com/gif.latex?O(V + E) ≈ O(N))). 
+​	Here, we present a new method by breadth-first-search (BFS) to match the irregular nodes on opposite sides, with time-complexity of ![](http://latex.codecogs.com/gif.latex?O(V + E)\approx O(V))), where V and E are the total numbers of nodes and edges on one side of the surface (For a graph simply composed of triangles or quads, E and N is almost the same, thus ![](http://latex.codecogs.com/gif.latex?O(V + E)\approx O(V))). 
 
-​	Thus, comparing ![](http://latex.codecogs.com/gif.latex?O(N)) to ![](http://latex.codecogs.com/gif.latex?O(N^{2})), our new method can save a lot of time! Especially when there are almost 100 x 100 = ![](http://latex.codecogs.com/gif.latex?10^{4}) nodes on a surface, our method can provide up to ![](http://latex.codecogs.com/gif.latex?10^{3}\\sim{10^{4}}) times of speeding-up. 
+​	Thus, comparing ![](http://latex.codecogs.com/gif.latex?O(V)) to ![](http://latex.codecogs.com/gif.latex?O(V^{2})), our new method can save a lot of time! Especially when there are almost 100 x 100 = ![](http://latex.codecogs.com/gif.latex?10^{4}) nodes on a surface, our method can provide up to ![](http://latex.codecogs.com/gif.latex?10^{3}\sim{10^{4}}) times of speeding-up. 
 
 ​	The basic idea of this method is illustrated as the figure below:
 
@@ -51,11 +51,11 @@
 >
 > For a matched node-pair (e.g., v0 and n0 on Z0- and Z1- faces respectively), we search the neighbors of them respectively, construct vectors pointed from this node to its neighbors, find the most similar vector-pair to match next pair of nodes (e.g., vector E0 is most similar to e0 among other vectors pointed to neighbors, thus we match v1 and n1 as they are the end points of vector e0 and E0). 
 
-​	For a 3D object with many nodes (![](http://latex.codecogs.com/gif.latex?\\sim10^{4})) on a surface (as shown by the figure below), the performance of our method is compared with the traditional method. 
+​	For a 3D object with many nodes (![](http://latex.codecogs.com/gif.latex?\sim10^{4})) on a surface (as shown by the figure below), the performance of our method is compared with the traditional method. 
 
 ![image-20220508164057134](README.assets/image-20220508164057134.png)
 
-> Fig. 3 if there are up to 100 x 100 = ![](http://latex.codecogs.com/gif.latex?10^{4}) nodes on a face, the matching can be a lot faster by BFS traversing (since time complexity is reduced from ![](http://latex.codecogs.com/gif.latex?O(V^{2})) to ![](http://latex.codecogs.com/gif.latex?O(V+E)≈O(V)))
+> Fig. 3 if there are up to 100 x 100 = ![](http://latex.codecogs.com/gif.latex?10^{4}) nodes on a face, the matching can be a lot faster by BFS traversing (since time complexity is reduced from ![](http://latex.codecogs.com/gif.latex?O(V^{2})) to ![](http://latex.codecogs.com/gif.latex?O(V+E)\approx O(V)))
 
 ## Installation
 
