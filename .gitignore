@@ -1,6 +1,7 @@
 __pycache__/
-inputData/*
-outputData/*
+inputData/
+outputData/
 test*.py
 tmp.py
 *oldVersion.py
+*.pptx

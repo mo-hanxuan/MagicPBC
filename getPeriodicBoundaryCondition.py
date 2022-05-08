@@ -1,17 +1,22 @@
 """
-    生成周期性边界条件, 只用 BFS算法, 比如, 左右两面成周期性边界条件的话
-    左面BFS, 右面根据左面 BFS 的矢量方向来遍历节点, 左右两边同时经过的节点即可作为一对 pair
+    generate periodic boundary condition (PBC). 
 
-    好处: 时间复杂度是 n, n 是左面节点的数量
-    否则:
-        普通算法1及缺点: 根据所有距离矩阵来计算, 时间复杂度会是 n**2
-        普通算法2及缺点: 面节点先排序再对应 （根据坐标排序）, 时间复杂度是 nlogn, 且排序会受到浮点数舍入误差的影响
+    Two methods to detect and partition the surface-nodes:
+        1. graph-method: (recommended, can deal with arbitrary deformed shape):
+            use dictionary-data-structure to map facet-nodes to element-number, 
+            where the surface-facet is shared by only one element. 
+            Construct the node-linking graph of surface, and the node-linking graph of the outlines. 
+            Using outlines as boundaries, 
+            partition the graph into different faces (left-, right-, down-, up-, back-, front- surfaces) by union-find algorithm.
+        2. method of xMin, xMax, yMin, yMax, zMin, zMax: 
+            detect the surface simply by coordinates of all nodes. 
+            This method can only be applied to the object with cuboid shape.
 
-
-    重要功能！！！ (已实现)
-        对于PBC, 在左右两面的节点拼接带有误差的时候, 
-        带有节点坐标调整功能, 使得左右两面的节点几乎可以完全匹配
-        见函数 "adjustCoordinatesForPBC()"
+    Two methods match nodes on opposites of the surface:
+        1. BFS method to match the nodes (time complexity of O(V + E), V and E are number of nodes and edges respectively): 
+            Matching nodes during traversing of surface-node-graphs of opposite faces. 
+            Given a matched node-pair, use similar vectors (pointed from current node to neighbors) to match their neighbors. 
+        2. nearest-coordinates method:  Could be very slow when there are many many nodes on a surface (with time complexity of O(V^2)).
 """
 
 import torch as tch
@@ -163,7 +168,7 @@ def write_PBC_Nset(file, obj):
         raise ValueError("error, not isinstance(obj, ElementsBody)")
     if not hasattr(obj, 'faceNode'):
         obj.getFaceNode()
-    for node in obj.faceNode:
+    for node in obj.getFaceNode():
         file.write('*Nset, nset=N{} \n'.format(node))
         file.write('{}, \n'.format(node))
 
@@ -287,6 +292,9 @@ def adjustCoordinatesForPBC(obj):
 
 
 if __name__ == "__main__":
+
+    testState = False
+
     # get the inp file and the object
     inpFile = input("\033[0;33;40m{}\033[0m".format("please insert the .inp file name (include the path): "))
     job = inpFile.split("/")[-1].split(".inp")[0] if "/" in inpFile else inpFile.split("\\")[-1].split(".inp")[0]
@@ -294,29 +302,31 @@ if __name__ == "__main__":
     obj = ElementsBody(*readInp(inpFile))
 
     key = input("\033[35;1m{}\033[0m".format(
-        "which method do you want to use? "
-        "1: xMin, xMax, yMin, yMax, zMin, zMax;  "
-        "2: graph-method, (insert 1 or 2): \n"
+        "which method do you want to use? \n"
+        "1: graph-method (recomended); \n"
+        "2: xMin, xMax, yMin, yMax, zMin, zMax;  \n(insert 1 or 2): "
     ))
     if key == "1":
-        getFaceForPBC = obj.getFaceForPBC
-        writeEquations = write_PBC_equation
-        adjustCoordinate = adjustCoordinatesForPBC
-    elif key == "2":
         getFaceForPBC = obj.getFaceForPBC_byGraph
         writeEquations = write_PBC_equation_byGraph
         adjustCoordinate = adjustCoordinatesForPBC_byGraph
+    elif key == "2":
+        getFaceForPBC = obj.getFaceForPBC
+        writeEquations = write_PBC_equation
+        adjustCoordinate = adjustCoordinatesForPBC
+
     getFaceForPBC()
 
-    adjustCoor = input('do you want to adjust the coordinates for PBC? \033[33m{}\033[0m'.format('(y/n): '))
+    adjustCoor = input("do you want to adjust the coordinates for PBC? "
+                       "(not recommended)\n\033[33m{}\033[0m".format('(y/n): '))
     while adjustCoor not in ['y', 'n']:
         adjustCoor = input('\033[33m{}\033[0m'.format('please insert "y" or "n": '))
     if adjustCoor == 'y':
         adjustCoordinate(obj)
-    del obj.faceMatch
-    getFaceForPBC()
+    if testState:
+        del obj.faceMatch
+        getFaceForPBC()
     
-
     # find the instance name
     instance = 'Part-1'
     with open(inpFile, 'r') as file:
@@ -358,20 +368,22 @@ if __name__ == "__main__":
         print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
             "file", newFileName, "has been written. "
         ))
-    else:
-        # write the Nset
-        with open('outputData/Nset_{}.txt'.format(job), 'w') as file:
-            for node in obj.faceNode:
-                file.write('*Nset, nset=N{} \n'.format(node))
-                file.write('{}, \n'.format(node))
-        print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
-            "file", 'outputData/Nset_{}.txt'.format(job), "has been written. "
-        ))
-        # write the equation for PBC
-        with open('outputData/Equation_{}.txt'.format(job), 'w') as file:
-            writeEquations(file, obj, instance)
-        print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
-            "file", 'outputData/Equation_{}.txt'.format(job), "has been written. "
-        ))
+    elif input(
+            "\033[32;1m write nset- and equations- files for PBC? (y/n): \033[0m"
+        ) in ["y", ""]:
+            # write the Nset
+            with open(path + '{}_nset.txt'.format(job), 'w') as file:
+                for node in obj.getFaceNode():
+                    file.write('*Nset, nset=N{} \n'.format(node))
+                    file.write('{}, \n'.format(node))
+            print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
+                "file", path + '{}_nset.txt'.format(job), "has been written. "
+            ))
+            # write the equation for PBC
+            with open(path + '{}_equation.txt'.format(job), 'w') as file:
+                writeEquations(file, obj, instance)
+            print("\033[40;36;1m {} {} \033[35;1m {} \033[0m".format(
+                "file", path + '{}_equation.txt'.format(job), "has been written. "
+            ))
         
     

@@ -16,7 +16,7 @@
 from typing import ValuesView
 from attr import has
 import torch as tch
-import threading, time
+import time
 
 from torch._C import Value
 from progressBar import *
@@ -639,15 +639,16 @@ class ElementsBody(object):
     
 
     def getFaceNode(self):
-        if not hasattr(self, 'facetDic'):
-            self.get_facetDic()
-        elif self.facetDic == None:
-            self.get_facetDic()
-        faceNode = set()
-        for facet in self.facetDic:
-            faceNode |= set(facet)
-        self.faceNode = faceNode
-        return faceNode
+        if hasattr(self, "surfaceGraph"):
+            return self.surfaceGraph
+        else:
+            if not hasattr(self, 'facetDic') or self.facetDic == None:
+                self.get_facetDic()
+            faceNode = set()
+            for facet in self.facetDic:
+                faceNode |= set(facet)
+            self.faceNode = faceNode
+            return faceNode
     
 
     def getXYZface(self):
@@ -856,9 +857,9 @@ class ElementsBody(object):
             eLen = self.get_eLen()
             tolerance = 3.e-4
 
-            method = input("\033[35;1m which method do you want to use to match nodes between two faces?\n "
-                           "    1: nearest-coordinates. \n"
-                           "    2: breadth-first-search (traverse the nodes by simular path)"
+            method = input("\033[35;1m which method do you want to use to match nodes between two faces? \n"
+                           "    1: breadth-first-search (traverse the nodes by simular path) \n"
+                           "    2: nearest-coordinates (could be very slow if there are so many nodes in a face) \n"
                            "insert 1 or 2: \n\033[0m")
             while method not in ['1', '2']:
                 method = input("please insert 1 or 2: ")
@@ -876,7 +877,9 @@ class ElementsBody(object):
             megaFacets = [
                 [self.megaElement[idx] for idx in facet] for facet in megaFacetsIdx
             ]
-            print("\033[32;1m megaFacets = {}\033[0m".format(megaFacets))
+            print("\033[32;1m megaFacets = \033[40;33;1m{}\033[0m".format(megaFacets))
+            begTime = time.time()
+
             visitedFacet = {node: False for node in self.surfaceSets}
             faceMatch = {}
             for node1 in self.surfaceSets:
@@ -928,18 +931,18 @@ class ElementsBody(object):
                         key = (*facet1, *facet2)
                         faceMatch[key] = {source1: source2, }
 
-                        if method == "1":  # match nodes by nearst coordinates
+                        if method == "2":  # match nodes by nearst coordinates
                             for nodeA in self.surfaceSets[node1]:
                                 nodeB = min(
                                     self.surfaceSets[node2], 
                                     key=lambda node: 
-                                        np.linalg.norm(
+                                        sum((
                                             (self.nodes[node] - self.nodes[facet2[0]]) - \
-                                            (self.nodes[nodeA] - self.nodes[facet1[0]]))
+                                            (self.nodes[nodeA] - self.nodes[facet1[0]]))**2)
                                 )
                                 faceMatch[key][nodeA] = nodeB
                         
-                        elif method == "2":  # match nodes by traversing the nodes wit simular path (by breadth-first-search)
+                        elif method == "1":  # match nodes by traversing the nodes wit simular path (by breadth-first-search)
                             visited = {node: False for node in self.surfaceSets[node1]}
                             que1, que2 = deque([source1]), deque([source2])
                             visited[source1] = True
@@ -991,6 +994,9 @@ class ElementsBody(object):
                                             que2.append(partner)
                                         else:
                                             raise ValueError('relativeError > tolerance, try to enlarge tolerence instead')
+            endTime = time.time()
+            print("\033[32;1m for faces matching, consuming time = \033[40;33;1m{} seconds\033[0m".format(endTime - begTime))
+            
             self.faceMatch = faceMatch
         return self.faceMatch
     
@@ -1049,9 +1055,10 @@ class ElementsBody(object):
                     raise ValueError("error, body doesn't have 4 edges for x-, y-, or z-direction")
                 else:
                     xedges = [(edges[i * 4 + j][0], edges[i * 4 + j][1]) for j in range(4)]
-                    for edgeKey in xedges[1:]:
-                        if len(outlines[edgeKey]) != len(outlines[xedges[0]]):
-                            raise ValueError("error, node numbers on edges don't coincide!")
+                    if xedges[0] in outlines:
+                        for edgeKey in xedges[1:]:
+                            if len(outlines[edgeKey]) != len(outlines[xedges[0]]):
+                                raise ValueError("error, node numbers on edges don't coincide!")
             self.outlines = outlines
         return self.outlines
 
