@@ -37,11 +37,11 @@
 
 ### matching nodes on opposite sides by BFS  (much quicker)
 
-​	The traditional method matches nodes on opposite sides (of surface) by nearest-coordinates, which is very slow with time-complexity of $O(V^{2})$, where V is total number of vertexes (nodes). This is  because for each node one side, it has to search all nodes on the other side to find out the matching node. 
+​	The traditional method matches nodes on opposite sides (of surface) by nearest-coordinates, which is very slow with time-complexity of ![](http://latex.codecogs.com/gif.latex?O(V^{2})), where V is total number of vertexes (nodes). This is  because for each node one side, it has to search all nodes on the other side to find out the matching node. 
 
 ​	Here, we present a new method by breadth-first-search (BFS) to match the irregular nodes on opposite sides, with time-complexity of $O(V + E) ≈ O(V)$, where V and E are the total numbers of nodes and edges on one side of the surface (For a graph simply composed of triangles or quads, E and N is almost the same, thus $O(V + E) ≈ O(N)$). 
 
-​	Thus, comparing $O(N)$ to $O(N^{2})$, our new method can save a lot of time! Especially when there are almost 100 x 100 = $10^{4}$ nodes on a surface, our method can provide up to $10^{3}\sim{10^{4}}$ times of speeding-up. 
+​	Thus, comparing ![](http://latex.codecogs.com/gif.latex?O(N)) to ![](http://latex.codecogs.com/gif.latex?O(N^{2})), our new method can save a lot of time! Especially when there are almost 100 x 100 = ![](http://latex.codecogs.com/gif.latex?10^{4}) nodes on a surface, our method can provide up to ![](http://latex.codecogs.com/gif.latex?10^{3}\\sim{10^{4}}) times of speeding-up. 
 
 ​	The basic idea of this method is illustrated as the figure below:
 
@@ -51,11 +51,11 @@
 >
 > For a matched node-pair (e.g., v0 and n0 on Z0- and Z1- faces respectively), we search the neighbors of them respectively, construct vectors pointed from this node to its neighbors, find the most similar vector-pair to match next pair of nodes (e.g., vector E0 is most similar to e0 among other vectors pointed to neighbors, thus we match v1 and n1 as they are the end points of vector e0 and E0). 
 
-​	For a 3D object with many nodes ($\sim10^{4}$) on a surface (as shown by the figure below), the performance of our method is compared with the traditional method. 
+​	For a 3D object with many nodes (![](http://latex.codecogs.com/gif.latex?\\sim10^{4})) on a surface (as shown by the figure below), the performance of our method is compared with the traditional method. 
 
 ![image-20220508164057134](README.assets/image-20220508164057134.png)
 
-> Fig. 3 if there are up to 100 x 100 = $10^{4}$ nodes on a face, the matching can be a lot faster by BFS traversing (since time complexity is reduced from $O(V^{2})$ to $O(V+E)≈O(V)$)
+> Fig. 3 if there are up to 100 x 100 = ![](http://latex.codecogs.com/gif.latex?10^{4}) nodes on a face, the matching can be a lot faster by BFS traversing (since time complexity is reduced from ![](http://latex.codecogs.com/gif.latex?O(V^{2})) to ![](http://latex.codecogs.com/gif.latex?O(V+E)≈O(V)))
 
 ## Installation
 
@@ -94,7 +94,7 @@ insert 1 or 2:`  1 \n
 
 > 1. BFS method to match the nodes as shown in Fig. 2. 
 >    1. noted: if the node-graphs are initially different on the opposite sides (based on the initial mesh), the traversing vectors (pointed from current node to neighbor nodes) on two sides could have significant differences. Don't worry, you can choose to continue and reset the error-tolerance following the instructions on the command line. The matching can still be achieved, unless the initial mesh quality is so bad that nodes-alignments are totally different on the opposite sites of surface. 
-> 2. nearest-coordinates method to match nodes. Could be very slow (with time complexity of $O(V^{2})$) when there are many many nodes on a surface. 
+> 2. nearest-coordinates method to match nodes. Could be very slow (with time complexity of ![](http://latex.codecogs.com/gif.latex?O(V^{2}))) when there are many many nodes on a surface. 
 
 Then instruct whether you want to write the result file:
 
