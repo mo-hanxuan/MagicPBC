@@ -1,4 +1,7 @@
 # magicPBC
+
+This project can automatically generate periodic boundary conditions (PBCs) more robustly and much quicker. It can deal with non-rectangle (non-cuboid) shape, and enormously accelerate node-matching process. It fits well for .inp file-format in Abaqus at present, and can be modified to fit other softwares or output data with your specific demands in the later versions. If you apply this project to you papers or your codes, please cite this reference: [https://github.com/mo-hanxuan/MagicPBC](https://github.com/mo-hanxuan/MagicPBC), thanks for your supports. 
+
 <img src="README.assets/image-20220508153130403.png" alt="image-20220508153130403" style="zoom:67%;" />
 
 > Fig. 1 periodic boundary condition (PBC) acts on opposite sides of surface
@@ -102,9 +105,6 @@ Then instruct whether you want to write the result file:
 
 The result file would be written to the same path with the initial file, with file name of {initialFileName}_PBC.inp, which contains the PBC info including the surafce-nodes and all equations needed to claim the dof-relation for PBC. This file can be utilized for finite-element simulation with PBC. 
 
+## notification
 
-
-
-
-
-
+If you apply this project to you papers or your codes, please cite this reference: [https://github.com/mo-hanxuan/MagicPBC](https://github.com/mo-hanxuan/MagicPBC). Thank you for your support. Welcome to make contributions to this project by putting Issues and Pull-Request on our [site](https://github.com/mo-hanxuan/MagicPBC). 
